@@ -8,7 +8,6 @@ import { useEffect, useState, useRef } from 'react';
 import fetchTile from './services/FetchTile';
 import latLngToTileCoords from './services/LatLngToTile';
 import crashData from '../2024_crash.json';
-import randomZoomRange from './services/RandomZoomRange';
 import L from 'leaflet';
 
 function Map() {
