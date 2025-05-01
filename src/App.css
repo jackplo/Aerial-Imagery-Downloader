@@ -45,3 +45,16 @@
 .read-the-docs {
   color: #888;
 }
+
+.zoom-level-box {
+  position: absolute;
+  top: 10px;
+  left: 50px; /* Adjust relative to Leaflet zoom controls */
+  background: white;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1000;
+  pointer-events: none;
+}
