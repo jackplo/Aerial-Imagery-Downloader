@@ -40,6 +40,7 @@ function Map() {
         />
         <HeatmapLayer data={crashData} />
         <CursorStyleUpdater isCaptureMode={isCaptureMode} />
+        <TileHighlight isCaptureMode={isCaptureMode} />
         <MapClickHandler
           isCaptureMode={isCaptureMode}
           setIsCaptureMode={setIsCaptureMode}
@@ -111,6 +112,66 @@ function ZoomLevelDisplay() {
   }, [map]);
 
   return <div className="zoom-level-box">Zoom: {zoom}</div>;
+}
+
+function TileHighlight({ isCaptureMode }: { isCaptureMode: boolean }) {
+  const map = useMap();
+  const rectangleRef = useRef<L.Rectangle | null>(null);
+
+  useEffect(() => {
+    if (!isCaptureMode) {
+      if (rectangleRef.current) {
+        map.removeLayer(rectangleRef.current);
+        rectangleRef.current = null;
+      }
+      return;
+    }
+
+    const tileToLatLng = (tileX: number, tileY: number, zoom: number) => {
+      const n = Math.pow(2, zoom);
+      const lon = (tileX / n) * 360 - 180;
+      const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * tileY) / n)));
+      const lat = (latRad * 180) / Math.PI;
+      return { lat, lng: lon };
+    };
+
+    const onMouseMove = (e: L.LeafletMouseEvent) => {
+      const zoom = map.getZoom();
+      const { x: tileX, y: tileY } = latLngToTileCoords(
+        e.latlng.lat,
+        e.latlng.lng,
+        zoom,
+      );
+
+      const nw = tileToLatLng(tileX, tileY, zoom);
+      const se = tileToLatLng(tileX + 1, tileY + 1, zoom);
+      const bounds = new LatLngBounds([nw.lat, nw.lng], [se.lat, se.lng]);
+
+      if (rectangleRef.current) {
+        rectangleRef.current.setBounds(bounds);
+      } else {
+        rectangleRef.current = L.rectangle(bounds, {
+          color: "#ff0000",
+          weight: 2,
+          fillColor: "#ff0000",
+          fillOpacity: 0.3,
+          interactive: false,
+        }).addTo(map);
+      }
+    };
+
+    map.on("mousemove", onMouseMove);
+
+    return () => {
+      map.off("mousemove", onMouseMove);
+      if (rectangleRef.current) {
+        map.removeLayer(rectangleRef.current);
+        rectangleRef.current = null;
+      }
+    };
+  }, [isCaptureMode, map]);
+
+  return null;
 }
 
 function HeatmapLayer({ data }: { data: { lat: number; lng: number }[] }) {
